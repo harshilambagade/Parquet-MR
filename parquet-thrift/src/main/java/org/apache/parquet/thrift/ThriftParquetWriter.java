@@ -42,13 +42,13 @@ public class ThriftParquetWriter<T extends TBase<?,?>> extends ParquetWriter<T> 
   }
 
   public ThriftParquetWriter(Path file, Class<T> thriftClass, CompressionCodecName compressionCodecName, int blockSize, int pageSize, boolean enableDictionary, boolean validating) throws IOException {
-    super(file, new TBaseWriteSupport<T>(thriftClass), compressionCodecName, blockSize, pageSize, enableDictionary, validating);
+    super(file, new TBaseWriteSupport<T>(thriftClass), compressionCodecName, blockSize, pageSize, enableDictionary, validating, null);
   }
 
   public ThriftParquetWriter(Path file, Class<T> thriftClass, CompressionCodecName compressionCodecName, int blockSize, int pageSize, boolean enableDictionary, boolean validating, Configuration conf) throws IOException {
     super(file, new TBaseWriteSupport<T>(thriftClass), compressionCodecName,
         blockSize, pageSize, pageSize, enableDictionary, validating,
-        DEFAULT_WRITER_VERSION, conf);
+        DEFAULT_WRITER_VERSION, conf, null);
   }
 
 }

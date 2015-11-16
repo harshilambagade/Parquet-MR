@@ -67,10 +67,11 @@ public class ParquetRecordWriter<T> extends RecordWriter<Void, T> {
       int dictionaryPageSize,
       boolean enableDictionary,
       boolean validating,
-      WriterVersion writerVersion) {
+      WriterVersion writerVersion,
+      String[] dictionaryExcludeColumns) {
     internalWriter = new InternalParquetRecordWriter<T>(w, writeSupport, schema,
         extraMetaData, blockSize, pageSize, compressor, dictionaryPageSize, enableDictionary,
-        validating, writerVersion);
+        validating, writerVersion, dictionaryExcludeColumns);
   }
 
   /**
@@ -96,10 +97,11 @@ public class ParquetRecordWriter<T> extends RecordWriter<Void, T> {
       boolean enableDictionary,
       boolean validating,
       WriterVersion writerVersion,
-      MemoryManager memoryManager) {
+      MemoryManager memoryManager,
+      String[] dictionaryExcludeColumns) {
     internalWriter = new InternalParquetRecordWriter<T>(w, writeSupport, schema,
         extraMetaData, blockSize, pageSize, compressor, dictionaryPageSize, enableDictionary,
-        validating, writerVersion);
+        validating, writerVersion, dictionaryExcludeColumns);
     this.memoryManager = checkNotNull(memoryManager, "memoryManager");
     memoryManager.addWriter(internalWriter, blockSize);
   }

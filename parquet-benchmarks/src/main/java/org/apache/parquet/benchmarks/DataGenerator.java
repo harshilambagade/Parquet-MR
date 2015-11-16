@@ -91,7 +91,7 @@ public class DataGenerator {
     GroupWriteSupport.setSchema(schema, configuration);
     SimpleGroupFactory f = new SimpleGroupFactory(schema);
     ParquetWriter<Group> writer = new ParquetWriter<Group>(outFile, new GroupWriteSupport(), codec, blockSize,
-                                                           pageSize, DICT_PAGE_SIZE, true, false, version, configuration);
+                                                           pageSize, DICT_PAGE_SIZE, true, false, version, configuration, null);
 
     //generate some data for the fixed len byte array field
     char[] chars = new char[fixedLenByteArraySize];

@@ -84,7 +84,7 @@ public class TestParquetWriter {
         ParquetWriter<Group> writer = new ParquetWriter<Group>(
             file,
             new GroupWriteSupport(),
-            UNCOMPRESSED, 1024, 1024, 512, true, false, version, conf);
+            UNCOMPRESSED, 1024, 1024, 512, true, false, version, conf, null);
         for (int i = 0; i < 1000; i++) {
           writer.write(
               f.newGroup()

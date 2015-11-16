@@ -43,6 +43,7 @@ public class ParquetWriter<T> implements Closeable {
   public static final boolean DEFAULT_IS_VALIDATING_ENABLED = false;
   public static final WriterVersion DEFAULT_WRITER_VERSION =
       WriterVersion.PARQUET_1_0;
+  public static final String[] DEFAULT_EXCLUDED_DICTIONARY_COLUMNS = null;
 
   private final InternalParquetRecordWriter<T> writer;
 
@@ -60,7 +61,8 @@ public class ParquetWriter<T> implements Closeable {
    */
   public ParquetWriter(Path file, WriteSupport<T> writeSupport, CompressionCodecName compressionCodecName, int blockSize, int pageSize) throws IOException {
     this(file, writeSupport, compressionCodecName, blockSize, pageSize,
-        DEFAULT_IS_DICTIONARY_ENABLED, DEFAULT_IS_VALIDATING_ENABLED);
+        DEFAULT_IS_DICTIONARY_ENABLED, DEFAULT_IS_VALIDATING_ENABLED,
+            DEFAULT_EXCLUDED_DICTIONARY_COLUMNS);
   }
 
   /**
@@ -83,8 +85,9 @@ public class ParquetWriter<T> implements Closeable {
       int blockSize,
       int pageSize,
       boolean enableDictionary,
-      boolean validating) throws IOException {
-    this(file, writeSupport, compressionCodecName, blockSize, pageSize, pageSize, enableDictionary, validating);
+      boolean validating,
+      String[] dictionaryExcludeColumns) throws IOException {
+    this(file, writeSupport, compressionCodecName, blockSize, pageSize, pageSize, enableDictionary, validating, dictionaryExcludeColumns);
   }
 
   /**
@@ -109,10 +112,11 @@ public class ParquetWriter<T> implements Closeable {
       int pageSize,
       int dictionaryPageSize,
       boolean enableDictionary,
-      boolean validating) throws IOException {
+      boolean validating,
+      String[] dictionaryExcludeColumns) throws IOException {
     this(file, writeSupport, compressionCodecName, blockSize, pageSize,
         dictionaryPageSize, enableDictionary, validating,
-        DEFAULT_WRITER_VERSION);
+        DEFAULT_WRITER_VERSION, dictionaryExcludeColumns);
   }
 
   /**
@@ -142,8 +146,9 @@ public class ParquetWriter<T> implements Closeable {
       int dictionaryPageSize,
       boolean enableDictionary,
       boolean validating,
-      WriterVersion writerVersion) throws IOException {
-    this(file, writeSupport, compressionCodecName, blockSize, pageSize, dictionaryPageSize, enableDictionary, validating, writerVersion, new Configuration());
+      WriterVersion writerVersion,
+      String[] dictionaryExcludeColumn) throws IOException {
+    this(file, writeSupport, compressionCodecName, blockSize, pageSize, dictionaryPageSize, enableDictionary, validating, writerVersion, new Configuration(), dictionaryExcludeColumn);
   }
 
   /**
@@ -171,10 +176,11 @@ public class ParquetWriter<T> implements Closeable {
       boolean enableDictionary,
       boolean validating,
       WriterVersion writerVersion,
-      Configuration conf) throws IOException {
+      Configuration conf,
+      String[] dictionaryExcludeColumns) throws IOException {
     this(file, ParquetFileWriter.Mode.CREATE, writeSupport,
         compressionCodecName, blockSize, pageSize, dictionaryPageSize,
-        enableDictionary, validating, writerVersion, conf);
+        enableDictionary, validating, writerVersion, conf, dictionaryExcludeColumns);
   }
   /**
    * Create a new ParquetWriter.
@@ -203,7 +209,8 @@ public class ParquetWriter<T> implements Closeable {
       boolean enableDictionary,
       boolean validating,
       WriterVersion writerVersion,
-      Configuration conf) throws IOException {
+      Configuration conf,
+      String[] dictionaryExcludeColumns) throws IOException {
 
     WriteSupport.WriteContext writeContext = writeSupport.init(conf);
     MessageType schema = writeContext.getSchema();
@@ -225,7 +232,8 @@ public class ParquetWriter<T> implements Closeable {
         dictionaryPageSize,
         enableDictionary,
         validating,
-        writerVersion);
+        writerVersion,
+        dictionaryExcludeColumns);
   }
 
   /**
@@ -250,7 +258,8 @@ public class ParquetWriter<T> implements Closeable {
         DEFAULT_IS_DICTIONARY_ENABLED,
         DEFAULT_IS_VALIDATING_ENABLED,
         DEFAULT_WRITER_VERSION,
-        conf);
+        conf,
+        DEFAULT_EXCLUDED_DICTIONARY_COLUMNS);
   }
 
   public void write(T object) throws IOException {

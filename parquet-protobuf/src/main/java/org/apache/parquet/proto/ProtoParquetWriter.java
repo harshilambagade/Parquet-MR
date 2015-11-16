@@ -63,7 +63,7 @@ public class ProtoParquetWriter<T extends MessageOrBuilder> extends ParquetWrite
                             CompressionCodecName compressionCodecName, int blockSize,
                             int pageSize, boolean enableDictionary, boolean validating) throws IOException {
     super(file, new ProtoWriteSupport(protoMessage),
-            compressionCodecName, blockSize, pageSize, enableDictionary, validating);
+            compressionCodecName, blockSize, pageSize, enableDictionary, validating, null);
   }
 
   /**

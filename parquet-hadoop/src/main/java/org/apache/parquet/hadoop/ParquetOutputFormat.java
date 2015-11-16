@@ -25,6 +25,7 @@ import static org.apache.parquet.hadoop.ParquetWriter.DEFAULT_PAGE_SIZE;
 import static org.apache.parquet.hadoop.util.ContextUtil.getConfiguration;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -109,6 +110,7 @@ public class ParquetOutputFormat<T> extends FileOutputFormat<Void, T> {
   public static final String ENABLE_JOB_SUMMARY   = "parquet.enable.summary-metadata";
   public static final String MEMORY_POOL_RATIO    = "parquet.memory.pool.ratio";
   public static final String MIN_MEMORY_ALLOCATION = "parquet.memory.min.chunk.size";
+  public static final String DICTIONARY_EXCLUDE_COLUMNS = "parquet.dictionary.exclude-columns";
 
   public static void setWriteSupportClass(Job job,  Class<?> writeSupportClass) {
     getConfiguration(job).set(WRITE_SUPPORT_CLASS, writeSupportClass.getName());
@@ -181,6 +183,14 @@ public class ParquetOutputFormat<T> extends FileOutputFormat<Void, T> {
 
   public static boolean getEnableDictionary(Configuration configuration) {
     return configuration.getBoolean(ENABLE_DICTIONARY, true);
+  }
+
+  public static String[] getDictionaryExcludeColumns(Configuration configuration) {
+    String colString = configuration.get(DICTIONARY_EXCLUDE_COLUMNS, null);
+    if(colString != null)
+      return colString.split(",");
+    else
+      return null;
   }
 
   @Deprecated
@@ -284,6 +294,9 @@ public class ParquetOutputFormat<T> extends FileOutputFormat<Void, T> {
     if (INFO) LOG.info("Validation is " + (validating ? "on" : "off"));
     WriterVersion writerVersion = getWriterVersion(conf);
     if (INFO) LOG.info("Writer version is: " + writerVersion);
+    String[] dictionaryExcludeColumns = getDictionaryExcludeColumns(conf);
+    if (INFO && dictionaryExcludeColumns!=null) LOG.info("Columns Excluded from Dictionary Encoding are: " +
+            Arrays.toString(dictionaryExcludeColumns));
 
     WriteContext init = writeSupport.init(conf);
     ParquetFileWriter w = new ParquetFileWriter(conf, init.getSchema(), file);
@@ -311,7 +324,8 @@ public class ParquetOutputFormat<T> extends FileOutputFormat<Void, T> {
         enableDictionary,
         validating,
         writerVersion,
-        memoryManager);
+        memoryManager,
+        dictionaryExcludeColumns);
   }
 
   /**

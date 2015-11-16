@@ -43,6 +43,8 @@ import org.apache.parquet.column.values.plain.PlainValuesWriter;
 import org.apache.parquet.column.values.rle.RunLengthBitPackingHybridValuesWriter;
 import org.apache.parquet.schema.MessageType;
 
+import java.util.Arrays;
+
 /**
  * This class represents all the configurable Parquet properties.
  *
@@ -74,11 +76,13 @@ public class ParquetProperties {
   private final int dictionaryPageSizeThreshold;
   private final WriterVersion writerVersion;
   private final boolean enableDictionary;
+  private final String[] dictionaryExcludeColumns;
 
-  public ParquetProperties(int dictPageSize, WriterVersion writerVersion, boolean enableDict) {
+  public ParquetProperties(int dictPageSize, WriterVersion writerVersion, boolean enableDict, String[] dictionaryExcludeColumns) {
     this.dictionaryPageSizeThreshold = dictPageSize;
     this.writerVersion = writerVersion;
     this.enableDictionary = enableDict;
+    this.dictionaryExcludeColumns = dictionaryExcludeColumns;
   }
 
   public static ValuesWriter getColumnDescriptorValuesWriter(int maxLevel, int initialSizePerCol, int pageSize) {
@@ -184,25 +188,53 @@ public class ParquetProperties {
   }
 
   public ValuesWriter getValuesWriter(ColumnDescriptor path, int initialSizePerCol, int pageSize) {
-    switch (path.getType()) {
-    case BOOLEAN: // no dictionary encoding for boolean
-      return writerToFallbackTo(path, initialSizePerCol, pageSize);
-    case FIXED_LEN_BYTE_ARRAY:
-      // dictionary encoding for that type was not enabled in PARQUET 1.0
-      if (writerVersion == WriterVersion.PARQUET_2_0) {
-        return dictWriterWithFallBack(path, initialSizePerCol, pageSize);
-      } else {
-       return writerToFallbackTo(path, initialSizePerCol, pageSize);
+    if(this.dictionaryExcludeColumns != null) {
+      switch (path.getType()) {
+        case BOOLEAN: // no dictionary encoding for boolean
+          return writerToFallbackTo(path, initialSizePerCol, pageSize);
+        case FIXED_LEN_BYTE_ARRAY:
+          // dictionary encoding for that type was not enabled in PARQUET 1.0
+          if (writerVersion == WriterVersion.PARQUET_2_0 &&
+                  !(Arrays.asList(this.dictionaryExcludeColumns).contains(path.getPath()[0]))) {
+            return dictWriterWithFallBack(path, initialSizePerCol, pageSize);
+          } else {
+            return writerToFallbackTo(path, initialSizePerCol, pageSize);
+          }
+        case BINARY:
+        case INT32:
+        case INT64:
+        case INT96:
+        case DOUBLE:
+        case FLOAT:
+          if(!(Arrays.asList(this.dictionaryExcludeColumns).contains(path.getPath()[0]))) {
+            return dictWriterWithFallBack(path, initialSizePerCol, pageSize);
+          } else {
+            return writerToFallbackTo(path, initialSizePerCol, pageSize);
+          }
+        default:
+          throw new IllegalArgumentException("Unknown type " + path.getType());
       }
-    case BINARY:
-    case INT32:
-    case INT64:
-    case INT96:
-    case DOUBLE:
-    case FLOAT:
-      return dictWriterWithFallBack(path, initialSizePerCol, pageSize);
-    default:
-      throw new IllegalArgumentException("Unknown type " + path.getType());
+    } else {
+      switch (path.getType()) {
+        case BOOLEAN: // no dictionary encoding for boolean
+          return writerToFallbackTo(path, initialSizePerCol, pageSize);
+        case FIXED_LEN_BYTE_ARRAY:
+          // dictionary encoding for that type was not enabled in PARQUET 1.0
+          if (writerVersion == WriterVersion.PARQUET_2_0) {
+            return dictWriterWithFallBack(path, initialSizePerCol, pageSize);
+          } else {
+            return writerToFallbackTo(path, initialSizePerCol, pageSize);
+          }
+        case BINARY:
+        case INT32:
+        case INT64:
+        case INT96:
+        case DOUBLE:
+        case FLOAT:
+          return dictWriterWithFallBack(path, initialSizePerCol, pageSize);
+        default:
+          throw new IllegalArgumentException("Unknown type " + path.getType());
+      }
     }
   }
 
@@ -228,13 +260,14 @@ public class ParquetProperties {
           pageStore,
           pageSize,
           dictionaryPageSizeThreshold,
-          enableDictionary, writerVersion);
+          enableDictionary, writerVersion,
+          dictionaryExcludeColumns);
     case PARQUET_2_0:
       return new ColumnWriteStoreV2(
           schema,
           pageStore,
           pageSize,
-          new ParquetProperties(dictionaryPageSizeThreshold, writerVersion, enableDictionary));
+          new ParquetProperties(dictionaryPageSizeThreshold, writerVersion, enableDictionary, dictionaryExcludeColumns));
     default:
       throw new IllegalArgumentException("unknown version " + writerVersion);
     }
